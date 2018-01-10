@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/small_window_layout"
-    android:layout_width="36dp"
-    android:layout_height="36dp"
+    android:layout_width="40dp"
+    android:layout_height="40dp"
     android:background="@color/colorPrimary"
     android:gravity="center">
 
     <TextView
         android:id="@+id/percent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:gravity="center"
         android:text="识别"
         android:textColor="#ffffff" />

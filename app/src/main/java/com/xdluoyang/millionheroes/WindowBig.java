@@ -27,9 +27,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 public class WindowBig extends RelativeLayout {
@@ -40,7 +37,7 @@ public class WindowBig extends RelativeLayout {
     public static int bigViewWidth;
     public static int bigViewHeight;
     private int currentIndex = -1;
-    private List<String> words = new ArrayList<>();
+    private Result recResult;
     long start = 0;
 
     public WindowBig(final Context context) {
@@ -77,31 +74,12 @@ public class WindowBig extends RelativeLayout {
     }
 
 
-    private void updateTab() {
-        /*
-        tab.removeAllTabs();
-        for (String s : words) {
-            tab.addTab(tab.newTab().setText(s.substring(0, Math.min(8, s.length()))));
-        }
-
-        if (words.size() > 0) {
-            tab.getTabAt(0).select();
-        }
-        */
-
-        if (words.size() > 0)
-            getBaiduSearchResult(0, words.get(0));
-    }
-
     public void startSearch() {
         start = System.currentTimeMillis();
-        words.clear();
-        updateTab();
-
         try {
             Process p = Runtime.getRuntime().exec("su");
             DataOutputStream dos = new DataOutputStream(p.getOutputStream());
-            dos.writeBytes("system/bin/screencap -p /sdcard/out.png\n");
+            dos.writeBytes("system/bin/screencap -p /sdcard/test/out.png\n");
             dos.writeBytes("exit\n");
             dos.flush();
             dos.close();
@@ -111,8 +89,8 @@ public class WindowBig extends RelativeLayout {
         }
 
         // 裁剪图片
-        String file1 = Environment.getExternalStorageDirectory() + "/out.png";
-        String file2 = Environment.getExternalStorageDirectory() + "/out_small.png";
+        String file1 = Environment.getExternalStorageDirectory() + "/test/out.png";
+        String file2 = Environment.getExternalStorageDirectory() + "/test/small.png";
 
         Bitmap bmp = BitmapFactory.decodeFile(file1);
         int width = bmp.getWidth();
@@ -143,7 +121,7 @@ public class WindowBig extends RelativeLayout {
             //Log.i("color", "r:" + red + " g:" + green + " b:" + blue + "avg:" + (red + green + blue) / 3);
         }
 
-        Bitmap resizedbitmap = Bitmap.createBitmap(bmp, x, height / 7, width - 2 * x, maxY - height / 7);
+        Bitmap resizedbitmap = Bitmap.createBitmap(bmp, x + 20, height / 7 + 20, width - 2 * x - 40, maxY - height / 7 - 40);
         try {
             resizedbitmap.compress(Bitmap.CompressFormat.PNG, 100, new FileOutputStream(file2)); // bmp is your Bitmap instance
         } catch (FileNotFoundException e) {
@@ -159,30 +137,28 @@ public class WindowBig extends RelativeLayout {
 
         // 调用通用文字识别服务
         OCR.getInstance().recognizeGeneralBasic(param, new OnResultListener<GeneralResult>() {
-            StringBuilder sb = new StringBuilder();
-
             @Override
             public void onResult(GeneralResult result) {
+                Result r = new Result();
 
                 // 调用成功，返回GeneralResult对象
                 for (WordSimple wordSimple : result.getWordList()) {
                     String word = wordSimple.getWords();
-                    Log.i("word", word);
-                    int index = word.indexOf(".");
-                    if ((index == 1 || index == 2) && Pattern.matches("([0-9]{1,2})|([A-D])", word.substring(0, index))) {
-                        if (index + 1 >= word.length()) {
-                            continue;
-                        }
-                        word = word.substring(index + 1) + '\n';
-                    }
+                    Log.i("==", word);
 
-                    //words.add(word);
-                    sb.append(word);
+                    int index = word.indexOf(".");
+                    if ((index == 1 || index == 2) && Pattern.matches("([0-9]{1,2})", word.substring(0, index))) {
+                        r.addResult(word.substring(index + 1));
+                    } else {
+                        r.addResult(word);
+                    }
                 }
 
-                String s = sb.toString();
-                words.addAll(Arrays.asList(s.split("\n")));
-                updateTab();
+                recResult = r;
+                Log.i("识别结果", r.toString());
+
+                //调用百度搜索
+                getBaiduSearchResult(0, r.getTitle());
             }
 
             @Override
